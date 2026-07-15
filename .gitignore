@@ -1,0 +1,6 @@
+*.hcl
+*.tfstate
+*.xml
+*.exe
+*.txt
+*.iml
