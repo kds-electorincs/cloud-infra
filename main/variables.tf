@@ -13,7 +13,7 @@ variable "region" {
 variable "frontend_origins" {
   description = "Allowed browser origins for direct-to-S3 uploads (CORS)"
   type        = list(string)
-  default     = ["http://localhost:5173", "http://localhost:4173"]
+  default     = ["http://localhost:5173", "http://localhost:4173", "https://ekds-frontend.vercel.app"]
 }
 
 variable "db_name" {
