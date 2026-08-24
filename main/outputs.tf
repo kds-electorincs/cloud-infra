@@ -22,3 +22,13 @@ output "backend_api_domain" {
   value       = aws_cloudfront_distribution.backend.domain_name
   description = "CloudFront domain for the backend API — Vercel frontend calls this, e.g. https://<this>/api/..."
 }
+
+output "github_actions_role_arn" {
+  value       = aws_iam_role.github_actions_deploy.arn
+  description = "ARN GitHub Actions assumes via OIDC to stage a deploy jar to S3 and trigger it via SSM"
+}
+
+output "staging_bucket_name" {
+  value       = aws_s3_bucket.staging.id
+  description = "S3 bucket GitHub Actions uploads the built backend jar to before deploy"
+}

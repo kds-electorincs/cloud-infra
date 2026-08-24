@@ -21,7 +21,7 @@ data "aws_ami" "al2023_arm64" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-arm64"]
+    values = ["al2023-ami-2023.*-arm64"]
   }
 
   filter {
@@ -45,8 +45,15 @@ resource "aws_iam_instance_profile" "backend" {
 # --- Backend EC2 instance ----------------------------------------------
 
 resource "aws_instance" "backend" {
-  ami                         = data.aws_ami.al2023_arm64.id
-  instance_type               = "t4g.small"
+  ami = data.aws_ami.al2023_arm64.id
+  # t4g.small -> t4g.medium: AWS resizes an EC2 instance type via an internal
+  # stop/start, not a resource replacement — Terraform should therefore show
+  # this as an in-place "update" (instance ID unchanged), not a
+  # destroy-and-recreate. Confirm the plan output actually shows "update
+  # in-place" before applying; if it shows "forces replacement" instead,
+  # something else in this diff (see user_data note below) is the cause, not
+  # this line.
+  instance_type               = "t4g.medium"
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.backend_ec2.id]
   key_name                    = aws_key_pair.backend.key_name
@@ -59,41 +66,9 @@ resource "aws_instance" "backend" {
     encrypted   = true
   }
 
-  user_data = <<-EOF
-    #!/bin/bash
-    set -e
-
-    # --- Java 25 via Amazon Corretto ---------------------------------------
-    rpm --import https://yum.corretto.aws/corretto.key
-    curl -L -o /etc/yum.repos.d/corretto.repo https://yum.corretto.aws/corretto.repo
-    dnf install -y java-25-amazon-corretto-devel
-
-    # --- nginx ---------------------------------------------------------------
-    dnf install -y nginx
-    systemctl enable nginx
-    systemctl start nginx
-
-    # --- systemd unit for the backend jar (jar deployed separately) --------
-    mkdir -p /opt/kds/backend
-    cat > /etc/systemd/system/kds-backend.service <<'UNIT'
-    [Unit]
-    Description=KDS backend Spring Boot service
-    After=network.target
-
-    [Service]
-    Type=simple
-    WorkingDirectory=/opt/kds/backend
-    ExecStart=/usr/bin/java -jar /opt/kds/backend/app.jar
-    Restart=always
-    User=ec2-user
-
-    [Install]
-    WantedBy=multi-user.target
-    UNIT
-
-    systemctl daemon-reload
-    # Not starting kds-backend yet — jar isn't deployed until a manual step.
-  EOF
+  user_data = templatefile("${path.module}/scripts/user_data.sh", {
+    deploy_script = file("${path.module}/scripts/deploy.sh")
+  })
 
   tags = {
     Name    = "${var.project}-backend"
