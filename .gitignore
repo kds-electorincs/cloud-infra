@@ -5,3 +5,4 @@
 *.txt
 *.iml
 *.tfvars
+seed_backend_env.ps1

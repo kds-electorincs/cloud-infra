@@ -60,6 +60,8 @@ WorkingDirectory=/opt/kds/backend
 ExecStart=/usr/bin/java -jar /opt/kds/backend/app.jar
 Restart=always
 User=ec2-user
+StandardOutput=append:/var/log/kds-backend.log
+StandardError=append:/var/log/kds-backend.log
 
 [Install]
 WantedBy=multi-user.target
@@ -98,13 +100,9 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWAGE
             "log_group_name": "/kds/prod/meilisearch",
             "log_stream_name": "{instance_id}",
             "retention_in_days": 14
-          }
-        ]
-      },
-      "journal": {
-        "collect_list": [
+          },
           {
-            "unit": "kds-backend.service",
+            "file_path": "/var/log/kds-backend.log",
             "log_group_name": "/kds/prod/kds-backend",
             "log_stream_name": "{instance_id}",
             "retention_in_days": 14
