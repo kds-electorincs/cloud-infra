@@ -10,6 +10,11 @@ resource "aws_cloudfront_distribution" "backend" {
   enabled = true
   comment = "${var.project} backend API"
 
+  # See waf-backend.tf — CLOUDFRONT-scope Web ACLs are attached directly via
+  # this attribute (aws_wafv2_web_acl_association only applies to regional
+  # scope resources like ALB/API Gateway, not CloudFront).
+  web_acl_id = aws_wafv2_web_acl.backend.arn
+
   origin {
     domain_name = aws_eip.backend.public_dns
     origin_id   = "backend-ec2"
